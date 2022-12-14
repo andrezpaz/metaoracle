@@ -42,7 +42,6 @@ function selectNamesMetadados() {
 function selectBrithdayNamesMetadados() {
     let sql = `SELECT to_char(rhpessoas.nascimento,'dd') dia, 
                       rhpessoas.nome, 
-                      rhcontratos.setor || ' - ' || rhsetores.descricao20 setor, 
                       rhcentroscusto2.descricao40 centrocusto
                  FROM rhcontratos, rhpessoas, rhsetores, rhcentroscusto1, rhcentroscusto2
                 WHERE rhcontratos.pessoa                   = rhpessoas.pessoa
@@ -50,7 +49,7 @@ function selectBrithdayNamesMetadados() {
                   AND rhcentroscusto1.centrocusto1         = rhcontratos.centrocusto1
                   AND rhcentroscusto2.centrocusto2         = rhcontratos.centrocusto2
                   AND rhcontratos.situacao                 in (1,2)
-                  AND to_char(rhpessoas.nascimento,'mm')   = to_char(sysdate, 'mm')
+                  AND to_char(rhpessoas.nascimento,'mm')   = to_char(add_months(sysdate,+1), 'mm')
              ORDER BY to_char(rhpessoas.nascimento,'dd')`
     return queryMetadados(sql);
 }
@@ -73,9 +72,11 @@ function runApiUnifi(filePHP, arg1, arg2) {
 function returnDateNow(month) {
     let  dateNow = new Date();
     let dateFormat = dateNow.getDay()+'-'+(dateNow.getMonth()+1)+'-'+dateNow.getFullYear();
+    let numberOfMonth = month;
+    if (month === 12) numberOfMonth = 0;
+   
     let nameOfMonth = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-
-    return month ? nameOfMonth[dateNow.getMonth()]:dateFormat;
+    return month ? nameOfMonth[numberOfMonth]:dateFormat;
 }
 
 async function executeCreateRevokeVoucher() {
@@ -184,9 +185,10 @@ async function sendNamesBirthday() {
     let namesBirthday = await selectBrithdayNamesMetadados(); 
     const ws = reader.utils.json_to_sheet(namesBirthday);
     reader.utils.book_append_sheet(fileXLS,ws, "Sheet1");
-    let nameFile = returnDateNow('month')+'.xlsx';
+    let monthNext = new Date().getMonth()+1;
+    let nameFile = 'Aniversariantes-' + returnDateNow(monthNext) + '.xlsx';
     reader.writeFile(fileXLS, `./${nameFile}`);
-    sendMail('aniversariantes@bazei.com.br', 'andrez.paz@bazei.com.br', 'Aniversariantes do Mes', 'Em anexo', nameFile, `./${nameFile}`)
+    sendMail('🎂️ Lista de aniversários 👻" <aniversariantes@bazei.com.br>', 'andrez.paz@bazei.com.br', 'Aniversariantes do Mês - '+returnDateNow(monthNext), 'Em anexo', nameFile, `./${nameFile}`)
 }
 
 function testeExec() {
