@@ -179,7 +179,7 @@ async function sendVouchersToEmail() {
     },'<html><body> <h4> Abaixo vouchers de WiFi dos funcionários recém cadastrados no sistema Metadados </h4>') 
     if (bodyEmail.includes('Senha Wi-Fi')) {
         bodyEmail = bodyEmail + '<footer><p><i>Mensagem enviada de forma automática</i></p></footer></body></html>'
-        sendMail('vouchersfuncionarios@bazei.com.br', 'andrez.paz@bazei.com.br', 'Vouchers de Wi-Fi criados - ' + returnDateNow(), bodyEmail);
+        sendMail('💻️ Internet para Funcionários 📱️ <vouchersfuncionarios@bazei.com.br>', "andrez.paz@bazei.com.br, roger.vidor@bazei.com.br, vitoria.ferreira@bazei.com.br", 'Vouchers de Wi-Fi criados - ' + returnDateNow(), bodyEmail);
         writeFileSync('./mensagem.html', bodyEmail);
     }
 }
