@@ -194,7 +194,7 @@ async function sendNamesBirthday() {
     let monthNext = new Date().getMonth()+1;
     let nameFile = 'Aniversariantes-' + returnDateNow(monthNext) + '.xlsx';
     reader.writeFile(fileXLS, `./${nameFile}`);
-    sendMail('🎂️ Lista de aniversários 👻" <aniversariantes@bazei.com.br>', 'andrez.paz@bazei.com.br', 'Aniversariantes do Mês - '+returnDateNow(monthNext), 'Em anexo', nameFile, `./${nameFile}`)
+    sendMail('🎂️ Lista de aniversários 👻" <aniversariantes@bazei.com.br>', "andrez.paz@bazei.com.br, artes02@bazei.com.br, artes01@bazei.com.br, artes03@bazei.com.br", 'Aniversariantes do Mês - '+returnDateNow(monthNext), 'Em anexo', nameFile, `./${nameFile}`)
 }
 
 function testeExec() {
