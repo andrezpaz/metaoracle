@@ -33,9 +33,15 @@ async function queryMetadados(query) {
 
 function selectNamesMetadados() {
     let sql = `SELECT DISTINCT(REPLACE(rhpessoas.nome, ' ', ''))||'#'||rhcontratos.contrato as note
-                 FROM rhcontratos, rhpessoas
-                WHERE rhcontratos.pessoa = rhpessoas.pessoa
-                  AND rhcontratos.situacao in (1,2)`
+                 FROM rhcontratos, rhpessoas, rhsetores, rhcentroscusto1, rhcentroscusto2
+                WHERE rhcontratos.pessoa                   = rhpessoas.pessoa
+                  AND rhcontratos.setor                    = rhsetores.setor
+                  AND rhcentroscusto1.centrocusto1         = rhcontratos.centrocusto1
+                  AND rhcentroscusto2.centrocusto2         = rhcontratos.centrocusto2
+                  AND rhcontratos.situacao                 in (1,2)
+                  AND rhcentroscusto2.centrocusto2         in ( 'BZ10307', 'BZ10218', 'BZ10402', 'BZ10301', 'BZ10310', 
+                                                               'BZ10305', 'BZ10306', 'BZ10309', 'BZ10311', 'BZ10302',
+                                                               'BZ10213')`
     return queryMetadados(sql);
 }
 
@@ -71,7 +77,7 @@ function runApiUnifi(filePHP, arg1, arg2) {
 
 function returnDateNow(month) {
     let  dateNow = new Date();
-    let dateFormat = dateNow.getDay()+'-'+(dateNow.getMonth()+1)+'-'+dateNow.getFullYear();
+    let dateFormat = dateNow.getDate()+'-'+(dateNow.getMonth()+1)+'-'+dateNow.getFullYear();
     let numberOfMonth = month;
     if (month === 12) numberOfMonth = 0;
    
@@ -100,10 +106,10 @@ function createVoucher(peopleToCheck, vouchersCreated) {
     
     console.log("Vouchers que serao Criados : ")
     //console.log(voucherToCreate)
-    voucherToCreate.length = 2
+    //voucherToCreate.length = 2
     voucherToCreate.forEach(voucher => {
         console.log(voucher)
-        runApiUnifi('create_voucher.php', voucher);
+        //runApiUnifi('create_voucher.php', voucher);
     })
 }
 
@@ -119,7 +125,7 @@ function revokeVoucher(peopleToCheck, vouchersCreated) {
     //console.log(voucherToRevoke)
     voucherToRevoke.forEach(voucher =>{
         console.log(voucher._id)
-        runApiUnifi('revoke_voucher.php', voucher._id);
+        //runApiUnifi('revoke_voucher.php', voucher._id);
     })
 }
 
