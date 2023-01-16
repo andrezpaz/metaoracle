@@ -88,10 +88,20 @@ function returnDateNow(month) {
 async function executeCreateRevokeVoucher() {
     let vouchersCreated = await runApiUnifi('state_voucher.php');
     let peopleToCheck = await selectNamesMetadados(); 
+    let guestsConnected = await listGuests();
 
-    createVoucher(peopleToCheck, vouchersCreated);
-    revokeVoucher(peopleToCheck, vouchersCreated);
+    createVoucher(peopleToCheck, vouchersCreated.concat(guestsConnected));
+    revokeVoucher(peopleToCheck, vouchersCreated.concat(guestsConnected));
 }
+
+async function listGuests() {
+    let guestsConnected = await runApiUnifi('list_guests.php');
+    let guests = guestsConnected.map((element)=>{
+        return {"note":element.name}
+    })
+    return guests
+}
+
 
 function createVoucher(peopleToCheck, vouchersCreated) {
     let voucherToCreate = peopleToCheck.reduce( (acumula, person) => {
@@ -108,7 +118,7 @@ function createVoucher(peopleToCheck, vouchersCreated) {
     //voucherToCreate.length = 2
     voucherToCreate.forEach(voucher => {
         console.log(voucher)
-        runApiUnifi('create_voucher.php', voucher);
+        //runApiUnifi('create_voucher.php', voucher);
     })
 }
 
@@ -124,7 +134,7 @@ function revokeVoucher(peopleToCheck, vouchersCreated) {
     //console.log(voucherToRevoke)
     voucherToRevoke.forEach(voucher =>{
         console.log(voucher._id)
-        runApiUnifi('revoke_voucher.php', voucher._id);
+        //runApiUnifi('revoke_voucher.php', voucher._id);
     })
 }
 
