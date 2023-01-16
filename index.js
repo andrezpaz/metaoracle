@@ -118,7 +118,7 @@ function createVoucher(peopleToCheck, vouchersCreated) {
     //voucherToCreate.length = 2
     voucherToCreate.forEach(voucher => {
         console.log(voucher)
-        //runApiUnifi('create_voucher.php', voucher);
+        runApiUnifi('create_voucher.php', voucher);
     })
 }
 
@@ -134,7 +134,7 @@ function revokeVoucher(peopleToCheck, vouchersCreated) {
     //console.log(voucherToRevoke)
     voucherToRevoke.forEach(voucher =>{
         console.log(voucher._id)
-        //runApiUnifi('revoke_voucher.php', voucher._id);
+        runApiUnifi('revoke_voucher.php', voucher._id);
     })
 }
 
