@@ -97,7 +97,7 @@ async function executeCreateRevokeVoucher() {
 async function listGuests() {
     let guestsConnected = await runApiUnifi('list_guests.php');
     let guests = guestsConnected.map((element)=>{
-        return {"note":element.name}
+        return {"note":element.name, "mac":element.mac, "admin_name":"apiubnt"}
     })
     return guests
 }
@@ -126,15 +126,19 @@ function revokeVoucher(peopleToCheck, vouchersCreated) {
     let voucherToRevoke = vouchersCreated.filter( (voucher) =>{
         
         let personFound = peopleToCheck.find( person => person.NOTE === voucher.note.split('#',2).join('#'))
-        if (!personFound && voucher.admin_name === 'apiubnt') {
+        
+        if (!personFound && voucher.admin_name === 'apiubnt' && voucher.note.split("#").length > 2 ) {
             return voucher
         }
     })
     console.log("Vouchers que serao revogados: ")
-    //console.log(voucherToRevoke)
     voucherToRevoke.forEach(voucher =>{
-        console.log(voucher._id)
-        runApiUnifi('revoke_voucher.php', voucher._id);
+        console.log(voucher.note)
+        if (voucher.mac) {
+            runApiUnifi('disconnect_guest.php', voucher.mac)
+        } else {
+            runApiUnifi('revoke_voucher.php', voucher._id);
+        }
     })
 }
 
