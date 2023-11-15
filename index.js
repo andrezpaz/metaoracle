@@ -1,5 +1,6 @@
 const { appendFile, writeFileSync } = require('fs');
 const oracledb = require('oracledb');
+const parse = require('csv-parse');
 
 
 async function connectionOracle() {
@@ -60,6 +61,36 @@ function selectBrithdayNamesMetadados() {
     return queryMetadados(sql);
 }
 
+function selectNamesHiredWeek() {
+    let sql = `SELECT rhpessoas.nome, rhpessoas.pessoa, rhcontratos.contrato,
+                      rhusuarios.nomeusuario,
+                      rhcentroscusto2.descricao40 centrocusto,
+                      rhcontratos.dataadmissao
+                 FROM rhcontratos, rhpessoas, rhusuarios, rhcentroscusto2
+                WHERE rhcontratos.situacao         in (1,2)
+                  AND rhcontratos.pessoa           = rhpessoas.pessoa
+                  AND rhpessoas.empresa            = rhusuarios.empresa
+                  AND rhpessoas.pessoa             = rhusuarios.pessoa
+                  AND rhcentroscusto2.centrocusto2 = rhcontratos.centrocusto2
+                  AND rhcontratos.dataadmissao > trunc(sysdate, 'D')`
+    return queryMetadados(sql)
+}
+
+function selectNamesFiredWeek() {
+    let sql = `SELECT rhpessoas.nome, rhpessoas.pessoa, rhcontratos.contrato,
+                      rhusuarios.nomeusuario,
+                      rhcentroscusto2.descricao40 centrocusto,
+                      rhcontratos.datarescisao
+                 FROM rhcontratos, rhpessoas, rhusuarios, rhcentroscusto2
+                WHERE rhcontratos.situacao         in (1,2)
+                  AND rhcontratos.pessoa           = rhpessoas.pessoa
+                  AND rhpessoas.empresa            = rhusuarios.empresa
+                  AND rhpessoas.pessoa             = rhusuarios.pessoa
+                  AND rhcentroscusto2.centrocusto2 = rhcontratos.centrocusto2
+                  AND rhcontratos.datarescisao > trunc(sysdate, 'D') `
+    return queryMetadados(sql)
+}
+
 function runApiUnifi(filePHP, arg1, arg2) {
     var spawn = require('child_process').spawn;
     var process = spawn('php', [`/etc/UniFi-API-client/${filePHP}`, arg1, arg2]);
@@ -85,10 +116,34 @@ function returnDateNow(month) {
     return month ? nameOfMonth[numberOfMonth]:dateFormat;
 }
 
+function checkDaysVoucher(voucherCreated, daysToCheck) {
+    let voucherWeeek = voucherCreated.find(voucher => voucher.note.split('#',2).join('#') === "VisitanteSemenal");
+    let dateVoucher = voucherWeeek[0].note.split('#')[2].split('-');
+    let dateVoucherFormat = new Date(dateVoucher[1] + '-' + dateVoucher[0] + '-' + dateVoucher[2]);
+    let dateNow = new Date();
+    let diffDays = Math.ceil(( dateNow.getTime() - dateVoucherFormat.getTime() ) / (1000 * 3600 * 24));
+    if (diffDays >= daysToCheck) {
+        return true
+    } else {
+        return false
+    }
+}
+
+function createWeekVoucher() {
+
+}
+
+async function executeCreateRevokeVoucheGuests() {
+    let vouchersCreated = await runApiUnifi('state_voucher.php');
+    let guestsConnected = await listGuests();
+    let vouchersCreatedConnected = vouchersCreated.concat(guestsConnected);
+    let voucherWeek = checkDaysVoucher(vouchersCreatedConnected, 7) ? createWeekVoucher():'';
+}
+
 async function executeCreateRevokeVoucher() {
     let vouchersCreated = await runApiUnifi('state_voucher.php');
-    let peopleToCheck = await selectNamesMetadados(); 
     let guestsConnected = await listGuests();
+    let peopleToCheck = await selectNamesMetadados();
 
     createVoucher(peopleToCheck, vouchersCreated.concat(guestsConnected));
     revokeVoucher(peopleToCheck, vouchersCreated.concat(guestsConnected));
@@ -193,7 +248,7 @@ async function sendVouchersToEmail() {
     },'<html><body> <h4> Abaixo vouchers de WiFi dos funcionários recém cadastrados no sistema Metadados </h4>') 
     if (bodyEmail.includes('Senha Wi-Fi')) {
         bodyEmail = bodyEmail + '<footer><p><i>Mensagem enviada de forma automática</i></p></footer></body></html>'
-        sendMail('💻️ Internet para Funcionários 📱️ <vouchersfuncionarios@bazei.com.br>', "andrez.paz@bazei.com.br, ana.barbosa@bazei.com.br, simone.hensel@bazei.com.br, vitoria.ferreira@bazei.com.br", 'Vouchers de Wi-Fi criados - ' + returnDateNow(), bodyEmail);
+        sendMail('💻️ Internet para Funcionários 📱️ <vouchersfuncionarios@bazei.com.br>', "andrez.paz@bazei.com.br, ana.barbosa@bazei.com.br", 'Vouchers de Wi-Fi criados - ' + returnDateNow(), bodyEmail);
         writeFileSync('./mensagem.html', bodyEmail);
     }
 }
@@ -214,4 +269,45 @@ function testeExec() {
     console.log("Teste de execucao");
 }
 
-module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher};
+function createFileCSV(data) {
+    // Convertendo dados para CSV
+    const csvData = data.map(item => Object.values(item));
+    
+    // Adicionando o cabeçalho
+    csvData.unshift(Object.keys(data[0]));
+    
+    // Convertendo para string CSV
+    const csvString = csvData.map(row => row.join(',')).join('\n');
+
+    return csvString;
+}
+
+async function sendNamesHiredWeek() {
+    let namesPeople = await selectNamesHiredWeek();
+    require('dotenv').config();
+    let pathfile = process.env.PATH_FILE_AD_META_SYNC
+
+    if (namesPeople.length > 0) {
+        // Escrever no arquivo
+        fs.writeFileSync(pathfile+'/contratadosSemanaMetadados.csv', createFileCSV(namesPeople));
+        console.log('Arquivo CSV foi gravado com sucesso');
+    } else {
+        console.log('Sem dados para gerar o arquivo CSV dos contratados')
+    }
+}
+
+async function sendNamesFiredWeek() {
+    let namesPeople = await selectNamesFiredWeek();
+    require('dotenv').config();
+    let pathfile = process.env.PATH_FILE_AD_META_SYNC
+
+    if (namesPeople.length > 0) {
+        // Escrever no arquivo
+        fs.writeFileSync(pathfile+'/desligadosSemanaMetadados.csv', createFileCSV(namesPeople));
+        console.log('Arquivo CSV foi gravado com sucesso');
+    } else {
+        console.log('Sem dados para gerar o arquivo CSV dos contratados')
+    }
+}
+
+module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher, sendNamesHiredWeek, sendNamesFiredWeek};
