@@ -253,6 +253,16 @@ async function sendVouchersToEmail() {
     }
 }
 
+async function sendUsersADMetaToEmail() { 
+    let bodyEmail = '<html><body> <h4> Em anexo usuarios do PortalRH Metadados </h4>'
+    let pathfile = process.env.PATH_FILE_AD_META_SYNC
+    if (fs.existsSync(pathfile+'/arquivoUsers.csv')) {
+        bodyEmail = bodyEmail + '<footer><p><i>Mensagem enviada de forma automática</i></p></footer></body></html>'
+        sendMail('💻️ Acessos Portal RH 📱️ <portalrh@bazei.com.br>', "andrez.paz@bazei.com.br", 'Vouchers de Wi-Fi criados - ' + returnDateNow(), bodyEmail);
+        writeFileSync('./mensagem.html', bodyEmail);
+    }
+}
+
 async function sendNamesBirthday() {
     const reader = require('xlsx');
     const fileXLS = reader.utils.book_new();
@@ -282,7 +292,7 @@ function createFileCSV(data) {
     return csvString;
 }
 
-async function sendNamesHiredWeek() {
+async function CreateFileNamesHiredWeek() {
     let namesPeople = await selectNamesHiredWeek();
     require('dotenv').config();
     let pathfile = process.env.PATH_FILE_AD_META_SYNC
@@ -296,7 +306,7 @@ async function sendNamesHiredWeek() {
     }
 }
 
-async function sendNamesFiredWeek() {
+async function CreateFileNamesFiredWeek() {
     let namesPeople = await selectNamesFiredWeek();
     require('dotenv').config();
     let pathfile = process.env.PATH_FILE_AD_META_SYNC
@@ -310,4 +320,4 @@ async function sendNamesFiredWeek() {
     }
 }
 
-module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher, sendNamesHiredWeek, sendNamesFiredWeek};
+module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher, CreateFileNamesHiredWeek, CreateFileNamesFiredWeek};
