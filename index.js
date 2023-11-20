@@ -61,33 +61,33 @@ function selectBrithdayNamesMetadados() {
     return queryMetadados(sql);
 }
 
-function selectNamesHiredWeek() {
+function selectNamesHiredDay() {
     let sql = `SELECT rhpessoas.nome, rhpessoas.pessoa, rhcontratos.contrato,
                       rhusuarios.nomeusuario,
                       rhcentroscusto2.descricao40 centrocusto,
                       rhcontratos.dataadmissao
                  FROM rhcontratos, rhpessoas, rhusuarios, rhcentroscusto2
-                WHERE rhcontratos.situacao         in (1,2)
-                  AND rhcontratos.pessoa           = rhpessoas.pessoa
-                  AND rhpessoas.empresa            = rhusuarios.empresa
-                  AND rhpessoas.pessoa             = rhusuarios.pessoa
-                  AND rhcentroscusto2.centrocusto2 = rhcontratos.centrocusto2
-                  AND rhcontratos.dataadmissao > trunc(sysdate, 'D')`
+                WHERE rhcontratos.situacao          in (1,2)
+                  AND rhcontratos.pessoa            = rhpessoas.pessoa
+                  AND rhpessoas.empresa             = rhusuarios.empresa
+                  AND rhpessoas.pessoa              = rhusuarios.pessoa
+                  AND rhcentroscusto2.centrocusto2  = rhcontratos.centrocusto2
+                  AND rhcontratos.dataadmissao      > sysdate - 1`
     return queryMetadados(sql)
 }
 
-function selectNamesFiredWeek() {
+function selectNamesFiredDay() {
     let sql = `SELECT rhpessoas.nome, rhpessoas.pessoa, rhcontratos.contrato,
                       rhusuarios.nomeusuario,
                       rhcentroscusto2.descricao40 centrocusto,
                       rhcontratos.datarescisao
                  FROM rhcontratos, rhpessoas, rhusuarios, rhcentroscusto2
-                WHERE rhcontratos.situacao         in (1,2)
-                  AND rhcontratos.pessoa           = rhpessoas.pessoa
-                  AND rhpessoas.empresa            = rhusuarios.empresa
-                  AND rhpessoas.pessoa             = rhusuarios.pessoa
-                  AND rhcentroscusto2.centrocusto2 = rhcontratos.centrocusto2
-                  AND rhcontratos.datarescisao > trunc(sysdate, 'D') `
+                WHERE rhcontratos.situacao          in (1,2)
+                  AND rhcontratos.pessoa            = rhpessoas.pessoa
+                  AND rhpessoas.empresa             = rhusuarios.empresa
+                  AND rhpessoas.pessoa              = rhusuarios.pessoa
+                  AND rhcentroscusto2.centrocusto2  = rhcontratos.centrocusto2
+                  AND rhcontratos.datarescisao      > sysdate - 1`
     return queryMetadados(sql)
 }
 
@@ -292,8 +292,8 @@ function createFileCSV(data) {
     return csvString;
 }
 
-async function CreateFileNamesHiredWeek() {
-    let namesPeople = await selectNamesHiredWeek();
+async function CreateFileNamesHiredDay() {
+    let namesPeople = await selectNamesHiredDay();
     require('dotenv').config();
     let pathfile = process.env.PATH_FILE_AD_META_SYNC
 
@@ -306,8 +306,8 @@ async function CreateFileNamesHiredWeek() {
     }
 }
 
-async function CreateFileNamesFiredWeek() {
-    let namesPeople = await selectNamesFiredWeek();
+async function CreateFileNamesFiredDay() {
+    let namesPeople = await selectNamesFiredDay();
     require('dotenv').config();
     let pathfile = process.env.PATH_FILE_AD_META_SYNC
 
@@ -320,4 +320,4 @@ async function CreateFileNamesFiredWeek() {
     }
 }
 
-module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher, CreateFileNamesHiredWeek, CreateFileNamesFiredWeek};
+module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher, CreateFileNamesHiredDay, CreateFileNamesFiredDay};
