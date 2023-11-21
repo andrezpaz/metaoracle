@@ -280,10 +280,8 @@ function testeExec() {
 }
 
 function createFileCSV(data) {
-    // Convertendo dados para CSV
-    const csvData = data.map(item => Object.values(item));
     
-    // Adicionando o cabeçalho e formata arquivo conforme necessidade
+    // formata arquivo conforme necessidade
     let csvFormat = data.map((element)=>{
         let nomeDividido = element.NOME.split(" ")
         return {DisplayName:element.NOME,
@@ -295,6 +293,12 @@ function createFileCSV(data) {
                 UserPrincipalName: element.NOMEUSUARIO + '@bazei.local'
                 }
     })
+
+    // Convertendo dados para CSV
+    const csvData = csvFormat.map(item => Object.values(item));
+
+    // Adiciona o cabeçalho 
+    csvData.unshift(Object.keys(csvFormat[0]));
     
     // Convertendo para string CSV
     const csvString = csvData.map(row => row.join(';')).join('\n');
