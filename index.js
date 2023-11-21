@@ -283,11 +283,21 @@ function createFileCSV(data) {
     // Convertendo dados para CSV
     const csvData = data.map(item => Object.values(item));
     
-    // Adicionando o cabeçalho
-    csvData.unshift(Object.keys(data[0]));
+    // Adicionando o cabeçalho e formata arquivo conforme necessidade
+    let csvFormat = data.map((element)=>{
+        let nomeDividido = element.NOME.split(" ")
+        return {DisplayName:element.NOME,
+                Description:element.PESSOA.toString() + '-' + element.CONTRATO.toString(),
+                SamAccountName: element.NOMEUSUARIO,
+                Department: element.CENTROCUSTO,
+                GivenName: nomeDividido[0],
+                Surname: nomeDividido[nomeDividido.length -1],
+                UserPrincipalName: element.NOMEUSUARIO + '@bazei.local'
+                }
+    })
     
     // Convertendo para string CSV
-    const csvString = csvData.map(row => row.join(',')).join('\n');
+    const csvString = csvData.map(row => row.join(';')).join('\n');
 
     return csvString;
 }
