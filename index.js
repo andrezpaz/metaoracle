@@ -72,7 +72,7 @@ function selectNamesHiredDay() {
                   AND rhpessoas.empresa             = rhusuarios.empresa
                   AND rhpessoas.pessoa              = rhusuarios.pessoa
                   AND rhcentroscusto2.centrocusto2  = rhcontratos.centrocusto2
-                  AND rhcontratos.dataadmissao      > sysdate - 1`
+                  AND to_char(rhcontratos.dataadmissao, 'dd/mm/yyyy')   = to_char(sysdate, 'dd/mm/yyyy')`
     return queryMetadados(sql)
 }
 
@@ -87,7 +87,7 @@ function selectNamesFiredDay() {
                   AND rhpessoas.empresa             = rhusuarios.empresa
                   AND rhpessoas.pessoa              = rhusuarios.pessoa
                   AND rhcentroscusto2.centrocusto2  = rhcontratos.centrocusto2
-                  AND rhcontratos.datarescisao      > sysdate - 1`
+                  AND to_char(rhcontratos.datarescisao, 'dd/mm/yyyy')   = to_char(sysdate, 'dd/mm/yyyy')`
     return queryMetadados(sql)
 }
 
