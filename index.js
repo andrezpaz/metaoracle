@@ -91,19 +91,34 @@ function selectNamesFiredDay() {
     return queryMetadados(sql)
 }
 
-function runApiUnifi(filePHP, arg1, arg2) {
-    var spawn = require('child_process').spawn;
-    var process = spawn('php', [`/etc/UniFi-API-client/${filePHP}`, arg1, arg2]);
+const { spawn } = require('child_process');
 
-    return new Promise(resolve =>{
-        function messageHandler(jData) {
-            if (jData) {
-                resolve(JSON.parse(jData))
-                process.off('message', messageHandler)
+function runApiUnifi(filePHP, arg1, arg2) {
+    return new Promise((resolve, reject) => {
+        const process = spawn('php', [`/etc/UniFi-API-client/${filePHP}`, arg1, arg2]);
+
+        let output = ''; // Variável para acumular os dados
+
+        // Acumula os dados recebidos
+        process.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        // Captura qualquer erro gerado pelo processo PHP
+        process.stderr.on('data', (data) => {
+            console.error(`Erro no processo PHP: ${data}`);
+        });
+
+        // Quando o processo termina, tenta fazer o parse do JSON acumulado
+        process.on('close', () => {
+            try {
+                const parsedData = JSON.parse(output);
+                resolve(parsedData);
+            } catch (error) {
+                reject(new Error(`Falha ao fazer parse do JSON: ${error.message}\nSaída: ${output}`));
             }
-        }
-        process.stdout.on('data', messageHandler);
-    })
+        });
+    });
 }
 
 function returnDateNow(month) {
