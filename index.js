@@ -40,9 +40,12 @@ function selectNamesMetadados() {
                   AND rhcentroscusto1.centrocusto1         = rhcontratos.centrocusto1
                   AND rhcentroscusto2.centrocusto2         = rhcontratos.centrocusto2
                   AND rhcontratos.situacao                 in (1,2)
-                  AND rhcentroscusto2.centrocusto2         in ( 'BZ10307', 'BZ10218', 'BZ10402', 'BZ10301', 'BZ10310', 
-                                                               'BZ10305', 'BZ10306', 'BZ10309', 'BZ10311', 'BZ10302',
-                                                               'BZ10213', 'BZ10401', 'BZ10201', 'BZ10405')`
+                  AND (
+                        rhcentroscusto2.centrocusto2         in ( 'BZ10307', 'BZ10218', 'BZ10402', 'BZ10301', 'BZ10310', 
+                                                                  'BZ10305', 'BZ10306', 'BZ10309', 'BZ10311', 'BZ10302',
+                                                                  'BZ10213', 'BZ10401', 'BZ10201', 'BZ10405')
+                     OR rhpessoas.pessoa in (4340) -- para pessoas especificas fora dos centros de custos acima
+                     )`
     return queryMetadados(sql);
 }
 
