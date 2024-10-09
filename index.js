@@ -159,17 +159,20 @@ async function executeCreateRevokeVoucheGuests() {
 }
 
 async function executeCreateRevokeVoucher() {
+    let dateNow = new Date()
+    console.log(dateNow.toString())
     let vouchersCreated = await runApiUnifi('state_voucher.php');
     let guestsConnected = await listGuests();
     let peopleToCheck = await selectNamesMetadados();
-
     createVoucher(peopleToCheck, vouchersCreated.concat(guestsConnected));
     revokeVoucher(peopleToCheck, vouchersCreated.concat(guestsConnected));
 }
 
 async function listGuests() {
     let guestsConnected = await runApiUnifi('list_guests.php');
-    let guests = guestsConnected.map((element)=>{
+    let guests = guestsConnected
+    .filter((element) => element.expired === false)
+    .map((element)=>{
         return {"note":element.name, "mac":element.mac, "admin_name":"apiubnt"}
     })
     return guests
