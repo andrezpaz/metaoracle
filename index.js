@@ -296,7 +296,7 @@ async function sendVouchersToEmail(type) {
     let filterVoucher; 
     if (type === 'semanal') {
         emailsDestination = "andrez.paz@bazei.com.br, infra.ti@bazei.com.br, claudia.lima@bazei.com.br";
-        msgHeader = '<html><body> <h4> Abaixo voucher Semanal';
+        msgHeader = '<html><body> <h4> Abaixo voucher Semanal </h4>';
         mailFrom = '📱️ Internet para Visitante 💻️ <vouchersvisitantes@bazei.com.br>';
         subject = 'Voucher Visitante de Wi-Fi criado - ' + returnDateNow();
         filterVoucher = 'VoucherSemanal';
