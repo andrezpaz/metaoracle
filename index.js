@@ -96,9 +96,9 @@ function selectNamesFiredDay() {
 
 const { spawn } = require('child_process');
 
-function runApiUnifi(filePHP, arg1, arg2) {
+function runApiUnifi(filePHP, arg1, arg2, arg3) {
     return new Promise((resolve, reject) => {
-        const process = spawn('php', [`/etc/UniFi-API-client/${filePHP}`, arg1, arg2]);
+        const process = spawn('php', [`/etc/UniFi-API-client/${filePHP}`, arg1, arg2, arg3]);
 
         let output = ''; // Variável para acumular os dados
 
@@ -147,15 +147,44 @@ function checkDaysVoucher(voucherCreated, daysToCheck) {
     }
 }
 
-function createWeekVoucher() {
-
+function qtyDays(date1) {
+    let dateCompare = new Date()
+    const umDiaEmMilissegundos = 1000 * 60 * 60 * 24; // Milissegundos em um dia
+    const diffEmMilissegundos = Math.abs(dateCompare - date1); // Diferença em milissegundos (valor absoluto)
+    return Math.floor(diffEmMilissegundos / umDiaEmMilissegundos); // Converte para dias
 }
 
-async function executeCreateRevokeVoucheGuests() {
+async function executeCreateRevokeVoucherGuests() {
+    let numberVoucher = 0;
+    let maxNumberVoucher = 0;
+    let daysToCreateVoucher = 7;
     let vouchersCreated = await runApiUnifi('state_voucher.php');
     let guestsConnected = await listGuests();
     let vouchersCreatedConnected = vouchersCreated.concat(guestsConnected);
-    let voucherWeek = checkDaysVoucher(vouchersCreatedConnected, 7) ? createWeekVoucher():'';
+    let voucherWeekToCheck = vouchersCreatedConnected.filter((voucher)=>{
+        if (voucher.note.includes('VoucherSemanal')) {
+            return voucher
+        }
+    })
+
+    let voucherWeekToRevoke = voucherWeekToCheck.filter((voucher)=> {
+        let dateVoucher = voucher.note.split('#')[2];
+        const [day, month, year] = dateVoucher.split('-');
+        const dateVoucherFormat =  new Date(year, month - 1, day);
+        //const dateVoucherFormat = new Date(new Date().setDate(new Date().getDate() - 7)) // para testes
+        if (qtyDays(dateVoucherFormat) >= daysToCreateVoucher){
+            numberVoucher = Number(voucher.note.split('#')[1]) + 1;
+            if (maxNumberVoucher < numberVoucher) maxNumberVoucher = numberVoucher;
+            return voucher
+        }
+    })
+    if (voucherWeekToRevoke.length > 0) {
+        let dateNow = returnDateNow();
+        let voucherToCreate = `VoucherSemanal#${maxNumberVoucher}#${dateNow}`;
+        revokeVoucher(undefined, voucherWeekToRevoke);
+        createVoucherGuest(voucherToCreate, daysToCreateVoucher, 'multi');
+
+    }
 }
 
 async function executeCreateRevokeVoucher() {
@@ -178,6 +207,11 @@ async function listGuests() {
     return guests
 }
 
+function createVoucherGuest(notes, duration, quota) {
+    console.log("Vouchers que serao Criados : ");
+    console.log(`Notes: ${notes} duration: ${duration} and quota: ${quota}`);
+    runApiUnifi('create_voucher.php', notes, duration, quota);
+}
 
 function createVoucher(peopleToCheck, vouchersCreated) {
     let voucherToCreate = peopleToCheck.reduce( (acumula, person) => {
@@ -355,4 +389,5 @@ async function CreateFileNamesFiredDay() {
     }
 }
 
-module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher, CreateFileNamesHiredDay, CreateFileNamesFiredDay};
+module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher, 
+                  CreateFileNamesHiredDay, CreateFileNamesFiredDay, executeCreateRevokeVoucherGuests};
