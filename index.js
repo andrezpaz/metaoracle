@@ -293,13 +293,13 @@ async function sendVouchersToEmail(type) {
     let msgHeader = '<html><body> <h4> Abaixo vouchers de WiFi dos funcionários recém cadastrados no sistema Metadados </h4>'
     let mailFrom = '💻️ Internet para Funcionários 📱️ <vouchersfuncionarios@bazei.com.br>';
     let subject = 'Vouchers de Wi-Fi criados - ' + returnDateNow();
-    let filterVoucher; 
+    let filterVoucherSemanal = 'VoucherSemanal';
     if (type === 'semanal') {
         emailsDestination = "andrez.paz@bazei.com.br, infra.ti@bazei.com.br, claudia.lima@bazei.com.br";
         msgHeader = '<html><body> <h4> Abaixo voucher Semanal </h4>';
         mailFrom = '📱️ Internet para Visitante 💻️ <vouchersvisitantes@bazei.com.br>';
         subject = 'Voucher Visitante de Wi-Fi criado - ' + returnDateNow();
-        filterVoucher = 'VoucherSemanal';
+        
     }
     let vouchersCreated = await runApiUnifi('state_voucher.php'); 
     let bodyEmail = vouchersCreated.reduce((acumula, voucher)=>{
@@ -309,20 +309,21 @@ async function sendVouchersToEmail(type) {
         let timeCreate = splitValue[2];
         let timeNow = returnDateNow();
         if (timeCreate === timeNow && name && ID) {
-            if (filterVoucher) {
-                if (voucher.note.includes(filterVoucher)) {
-                    acumula = acumula + '<p> Nome: '+ name+ ' <br> ID: ' + ID + ' <br> Senha Wi-Fi: ' + voucher.code + ' </p> // -------------------------- //';    
-                }
+            if (type === 'semanal') {
+                acumula = acumula + '<p> Nome: '+ name+ ' <br> ID: ' + ID + ' <br> Senha Wi-Fi: ' + voucher.code + ' </p> // -------------------------- //';    
             } else {
-                acumula = acumula + '<p> Nome: '+ name+ ' <br> Codigo Meta: ' + ID + ' <br> Senha Wi-Fi: ' + voucher.code + ' </p> // -------------------------- //';
+                if (!voucher.note.includes(filterVoucherSemanal)) {
+                    acumula = acumula + '<p> Nome: '+ name+ ' <br> Codigo Meta: ' + ID + ' <br> Senha Wi-Fi: ' + voucher.code + ' </p> // -------------------------- //';
+                }
             }
         }
         return acumula;
     },msgHeader) 
     if (bodyEmail.includes('Senha Wi-Fi')) {
         bodyEmail = bodyEmail + '<footer><p><i>Mensagem enviada de forma automática</i></p></footer></body></html>'
-        sendMail(mailFrom, emailsDestination, subject, bodyEmail);
-        writeFileSync('./mensagem.html', bodyEmail);
+        console.log(bodyEmail)
+        //sendMail(mailFrom, emailsDestination, subject, bodyEmail);
+        //writeFileSync('./mensagem.html', bodyEmail);
     }
 }
 
