@@ -134,19 +134,6 @@ function returnDateNow(month) {
     return month ? nameOfMonth[numberOfMonth]:dateFormat;
 }
 
-function checkDaysVoucher(voucherCreated, daysToCheck) {
-    let voucherWeeek = voucherCreated.find(voucher => voucher.note.split('#',2).join('#') === "VisitanteSemenal");
-    let dateVoucher = voucherWeeek[0].note.split('#')[2].split('-');
-    let dateVoucherFormat = new Date(dateVoucher[1] + '-' + dateVoucher[0] + '-' + dateVoucher[2]);
-    let dateNow = new Date();
-    let diffDays = Math.ceil(( dateNow.getTime() - dateVoucherFormat.getTime() ) / (1000 * 3600 * 24));
-    if (diffDays >= daysToCheck) {
-        return true
-    } else {
-        return false
-    }
-}
-
 function qtyDays(date1) {
     let dateCompare = new Date()
     const umDiaEmMilissegundos = 1000 * 60 * 60 * 24; // Milissegundos em um dia
