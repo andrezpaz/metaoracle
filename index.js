@@ -288,7 +288,19 @@ function sendMail(from, to, subject, msgBody, filename, path) {
     })
 }
 
-async function sendVouchersToEmail() {
+async function sendVouchersToEmail(type) {
+    let emailsDestination = "andrez.paz@bazei.com.br, luana.tessaro@bazei.com.br";
+    let msgHeader = '<html><body> <h4> Abaixo vouchers de WiFi dos funcionários recém cadastrados no sistema Metadados </h4>'
+    let mailFrom = '💻️ Internet para Funcionários 📱️ <vouchersfuncionarios@bazei.com.br>';
+    let subject = 'Vouchers de Wi-Fi criados - ' + returnDateNow();
+    let filterVoucher; 
+    if (type === 'semanal') {
+        emailsDestination = "andrez.paz@bazei.com.br, infra.ti@bazei.com.br, claudia.lima@bazei.com.br";
+        msgHeader = '<html><body> <h4> Abaixo voucher Semanal';
+        mailFrom = '📱️ Internet para Visitante 💻️ <vouchersvisitantes@bazei.com.br>';
+        subject = 'Voucher Visitante de Wi-Fi criado - ' + returnDateNow();
+        filterVoucher = 'VoucherSemanal';
+    }
     let vouchersCreated = await runApiUnifi('state_voucher.php'); 
     let bodyEmail = vouchersCreated.reduce((acumula, voucher)=>{
         let splitValue = voucher.note.split('#')
@@ -297,13 +309,19 @@ async function sendVouchersToEmail() {
         let timeCreate = splitValue[2];
         let timeNow = returnDateNow();
         if (timeCreate === timeNow && name && ID) {
-            acumula = acumula + '<p> Nome: '+ name+ ' <br> Codigo Meta: ' + ID + ' <br> Senha Wi-Fi: ' + voucher.code + ' </p> // -------------------------- //';
+            if (filterVoucher) {
+                if (voucher.note.includes(filterVoucher)) {
+                    acumula = acumula + '<p> Nome: '+ name+ ' <br> ID: ' + ID + ' <br> Senha Wi-Fi: ' + voucher.code + ' </p> // -------------------------- //';    
+                }
+            } else {
+                acumula = acumula + '<p> Nome: '+ name+ ' <br> Codigo Meta: ' + ID + ' <br> Senha Wi-Fi: ' + voucher.code + ' </p> // -------------------------- //';
+            }
         }
         return acumula;
-    },'<html><body> <h4> Abaixo vouchers de WiFi dos funcionários recém cadastrados no sistema Metadados </h4>') 
+    },msgHeader) 
     if (bodyEmail.includes('Senha Wi-Fi')) {
         bodyEmail = bodyEmail + '<footer><p><i>Mensagem enviada de forma automática</i></p></footer></body></html>'
-        sendMail('💻️ Internet para Funcionários 📱️ <vouchersfuncionarios@bazei.com.br>', "andrez.paz@bazei.com.br, luana.tessaro@bazei.com.br", 'Vouchers de Wi-Fi criados - ' + returnDateNow(), bodyEmail);
+        sendMail(mailFrom, emailsDestination, subject, bodyEmail);
         writeFileSync('./mensagem.html', bodyEmail);
     }
 }
