@@ -168,9 +168,8 @@ async function executeCreateRevokeVoucherGuests() {
     if (voucherWeekToRevoke.length > 0) {
         let dateNow = returnDateNow();
         let voucherToCreate = `VoucherSemanal#${maxNumberVoucher}#${dateNow}`;
-        revokeVoucher(undefined, voucherWeekToRevoke);
+        revokeVoucher([], voucherWeekToRevoke);
         createVoucherGuest(voucherToCreate, daysToCreateVoucher, 'multi');
-
     }
 }
 
@@ -308,9 +307,8 @@ async function sendVouchersToEmail(type) {
     },msgHeader) 
     if (bodyEmail.includes('Senha Wi-Fi')) {
         bodyEmail = bodyEmail + '<footer><p><i>Mensagem enviada de forma automática</i></p></footer></body></html>'
-        console.log(bodyEmail)
-        //sendMail(mailFrom, emailsDestination, subject, bodyEmail);
-        //writeFileSync('./mensagem.html', bodyEmail);
+        sendMail(mailFrom, emailsDestination, subject, bodyEmail);
+        writeFileSync('./mensagem.html', bodyEmail);
     }
 }
 
