@@ -3,17 +3,21 @@ const oracledb = require('oracledb');
 const parse = require('csv-parse');
 
 
-async function connectionOracle() {
+async function connectionOracle(database) {
     oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
     require('dotenv').config();
-    let conn = await oracledb.getConnection({ user: process.env.DB_USER, password: process.env.DB_PASS, connectionString: process.env.DB_HOST});
+    if (database === 'iniflex') {
+        let conn = await oracledb.getConnection({ user: process.env.DB_USER_INIFLEX, password: process.env.DB_PASS_INIFLEX, connectionString: process.env.DB_HOST});
+    } else {
+        let conn = await oracledb.getConnection({ user: process.env.DB_USER, password: process.env.DB_PASS, connectionString: process.env.DB_HOST});
+    }
     return conn;
 }
 
-async function queryMetadados(query) {
+async function executeDatabase(database, query) {
     let connection;
     try {
-        connection = await connectionOracle();
+        connection = await connectionOracle(database);
         const result = await connection.execute(
             query,
         [],
@@ -46,7 +50,7 @@ function selectNamesMetadados() {
                                                                   'BZ10213', 'BZ10401', 'BZ10201', 'BZ10405')
                      OR rhpessoas.pessoa in (4340) -- para pessoas especificas fora dos centros de custos acima
                      )`
-    return queryMetadados(sql);
+    return executeDatabase('metadados', sql);
 }
 
 function selectBrithdayNamesMetadados() {
@@ -61,7 +65,7 @@ function selectBrithdayNamesMetadados() {
                   AND rhcontratos.situacao                 in (1,2)
                   AND to_char(rhpessoas.nascimento,'mm')   = to_char(add_months(sysdate,+1), 'mm')
              ORDER BY to_char(rhpessoas.nascimento,'dd')`
-    return queryMetadados(sql);
+    return executeDatabase('metadados', sql);
 }
 
 function selectNamesHiredDay() {
@@ -76,7 +80,7 @@ function selectNamesHiredDay() {
                   AND rhpessoas.pessoa              = rhusuarios.pessoa
                   AND rhcentroscusto2.centrocusto2  = rhcontratos.centrocusto2
                   AND to_char(rhcontratos.dataadmissao, 'dd/mm/yyyy')   = to_char(sysdate, 'dd/mm/yyyy')`
-    return queryMetadados(sql)
+    return executeDatabase('metadados', sql)
 }
 
 function selectNamesFiredDay() {
@@ -91,7 +95,23 @@ function selectNamesFiredDay() {
                   AND rhpessoas.pessoa              = rhusuarios.pessoa
                   AND rhcentroscusto2.centrocusto2  = rhcontratos.centrocusto2
                   AND to_char(rhcontratos.datarescisao, 'dd/mm/yyyy')   = to_char(sysdate, 'dd/mm/yyyy')`
-    return queryMetadados(sql)
+    return executeDatabase('metadados', sql)
+}
+
+function selectNamesMetadadosActives(){
+    let sql = `SELECT rhcontratos.contrato, rhpessoas.nome, rhpessoas.cpf  
+                 FROM rhcontratos, rhpessoas
+                WHERE rhcontratos.pessoa   = rhpessoas.pessoa
+                  AND rhcontratos.situacao in (1,2)`
+    return executeDatabase('metadados', sql)
+}
+
+function selectNamesIniflexActives(){
+    let sql = `SELECT asdusuario.cpf, asdusuario.nome
+                 FROM asdusuario
+                WHERE tipo_usuario = 4
+                  AND situacao     = 'A'`
+    return executeDatabase('iniflex', sql)
 }
 
 const { spawn } = require('child_process');
@@ -153,7 +173,8 @@ async function executeCreateRevokeVoucherGuests() {
             return voucher
         }
     })
-
+    /* TODO */
+    /* Ele nao revoga o voucher */
     let voucherWeekToRevoke = voucherWeekToCheck.filter((voucher)=> {
         let dateVoucher = voucher.note.split('#')[2];
         const [day, month, year] = dateVoucher.split('-');
@@ -281,7 +302,8 @@ async function sendVouchersToEmail(type) {
     let subject = 'Vouchers de Wi-Fi criados - ' + returnDateNow();
     let filterVoucherSemanal = 'VoucherSemanal';
     if (type === 'semanal') {
-        emailsDestination = "andrez.paz@bazei.com.br, infra.ti@bazei.com.br, claudia.lima@bazei.com.br";
+        //emailsDestination = "andrez.paz@bazei.com.br, infra.ti@bazei.com.br, claudia.lima@bazei.com.br";
+        emailsDestination = "andrez.paz@bazei.com.br";
         msgHeader = '<html><body> <h4> Abaixo voucher Semanal </h4>';
         mailFrom = '📱️ Internet para Visitante 💻️ <vouchersvisitantes@bazei.com.br>';
         subject = 'Voucher Visitante de Wi-Fi criado - ' + returnDateNow();
