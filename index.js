@@ -6,10 +6,11 @@ const parse = require('csv-parse');
 async function connectionOracle(database) {
     oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
     require('dotenv').config();
+    let conn;
     if (database === 'iniflex') {
-        let conn = await oracledb.getConnection({ user: process.env.DB_USER_INIFLEX, password: process.env.DB_PASS_INIFLEX, connectionString: process.env.DB_HOST});
+        conn = await oracledb.getConnection({ user: process.env.DB_USER_INIFLEX, password: process.env.DB_PASS_INIFLEX, connectionString: process.env.DB_HOST});
     } else {
-        let conn = await oracledb.getConnection({ user: process.env.DB_USER, password: process.env.DB_PASS, connectionString: process.env.DB_HOST});
+        conn = await oracledb.getConnection({ user: process.env.DB_USER, password: process.env.DB_PASS, connectionString: process.env.DB_HOST});
     }
     return conn;
 }
@@ -263,12 +264,18 @@ function sendMail(from, to, subject, msgBody, filename, path) {
     require('dotenv').config();
     const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport({
-        service: process.env.MAIL_SERVICE,
+        host: process.env.MAIL_HOST, // smtp.office365.com
+        port: parseInt(process.env.MAIL_PORT), // 587
+        secure: false, // true for 465, false for other ports
         auth: {
-            user: process.env.MAIL_USER,
-            pass: process.env.MAIL_PASS
+            user: process.env.MAIL_USER, // Seu e-mail
+            pass: process.env.MAIL_PASS // Sua senha
+        },
+        tls: {
+            ciphers: 'SSLv3', // Configuração recomendada para compatibilidade com Office 365
+            rejectUnauthorized: false // Permitir autoassinados (opcional)
         }
-    })
+    });
     let attach = []
     if (path) {
         attach = [
@@ -305,7 +312,7 @@ async function sendVouchersToEmail(type) {
         //emailsDestination = "andrez.paz@bazei.com.br, infra.ti@bazei.com.br, claudia.lima@bazei.com.br";
         emailsDestination = "andrez.paz@bazei.com.br";
         msgHeader = '<html><body> <h4> Abaixo voucher Semanal </h4>';
-        mailFrom = '📱️ Internet para Visitante 💻️ <vouchersvisitantes@bazei.com.br>';
+        mailFrom = '📱️ Internet para Visitante 💻️ <nfe@bazei.com.br>';
         subject = 'Voucher Visitante de Wi-Fi criado - ' + returnDateNow();
         
     }
@@ -339,7 +346,7 @@ async function sendUsersADMetaToEmail() {
     let pathfile = process.env.PATH_FILE_AD_META_SYNC
     if (fs.existsSync(pathfile+'/arquivoUsers.csv')) {
         bodyEmail = bodyEmail + '<footer><p><i>Mensagem enviada de forma automática</i></p></footer></body></html>'
-        sendMail('💻️ Acessos Portal RH 📱️ <portalrh@bazei.com.br>', "andrez.paz@bazei.com.br", 'Vouchers de Wi-Fi criados - ' + returnDateNow(), bodyEmail);
+        sendMail('💻️ Acessos Portal RH 📱️ <nfe@bazei.com.br>', "andrez.paz@bazei.com.br", 'Vouchers de Wi-Fi criados - ' + returnDateNow(), bodyEmail);
         writeFileSync('./mensagem.html', bodyEmail);
     }
 }
@@ -353,7 +360,27 @@ async function sendNamesBirthday() {
     let monthNext = new Date().getMonth()+1;
     let nameFile = 'Aniversariantes-' + returnDateNow(monthNext) + '.xlsx';
     reader.writeFile(fileXLS, `./${nameFile}`);
-    sendMail('🎂️ Lista de aniversários 👻" <aniversariantes@bazei.com.br>', "andrez.paz@bazei.com.br, artes02@bazei.com.br, artes01@bazei.com.br, artes03@bazei.com.br", 'Aniversariantes do Mês - '+returnDateNow(monthNext), 'Em anexo', nameFile, `./${nameFile}`)
+    sendMail('🎂️ Lista de aniversários 👻" <nfe@bazei.com.br>', "andrez.paz@bazei.com.br, artes02@bazei.com.br, artes01@bazei.com.br, artes03@bazei.com.br", 'Aniversariantes do Mês - '+returnDateNow(monthNext), 'Em anexo', nameFile, `./${nameFile}`)
+}
+
+async function checkNamesActivesDatabases() {
+    let namesInilfex = await selectNamesIniflexActives();
+    let namesMetadados = await selectNamesMetadadosActives();
+    let namesToDisable = namesInilfex.reduce((total, iniflex) => {
+        let personMatch = namesMetadados.find(metadados => metadados.CONTRATO === iniflex.CPF);
+        if (!personMatch) {
+            total.push(iniflex)
+            //console.log(`Usuario para desabilitar no Iniflex: ${iniflex.CPF} - ${iniflex.NOME}`);
+        }
+        return total
+    },[])
+    //console.log(namesToDisable);
+    
+    namesToDisable.forEach((person)=>{
+        console.log(person)
+    })
+    //console.log(namesInilfex);
+    //console.log(namesMetadados);
 }
 
 function testeExec() {
@@ -415,5 +442,9 @@ async function CreateFileNamesFiredDay() {
     }
 }
 
+function sendMailTest(mailFrom, emailsDestination, subject, bodyEmail) {
+    sendMail(mailFrom, emailsDestination, subject, bodyEmail);
+}
+
 module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher, 
-                  CreateFileNamesHiredDay, CreateFileNamesFiredDay, executeCreateRevokeVoucherGuests};
+                  CreateFileNamesHiredDay, CreateFileNamesFiredDay, executeCreateRevokeVoucherGuests, checkNamesActivesDatabases, sendMailTest};
