@@ -15,15 +15,16 @@ async function connectionOracle(database) {
     return conn;
 }
 
-async function executeDatabase(database, query) {
+async function executeDatabase(database, query, binds = {}, commit = false) {
     let connection;
     try {
         connection = await connectionOracle(database);
-        const result = await connection.execute(
-            query,
-        [],
-    );
-    return result.rows;
+        const result = await connection.execute(query,binds);
+
+        if (commit) {
+            await connection.commit(); //realiza o commit se o parametro for true
+        }
+        return result.rows;
     } catch (err) {
         console.log(err);
     } finally {
@@ -88,7 +89,8 @@ function selectNamesFiredDay() {
     let sql = `SELECT rhpessoas.nome, rhpessoas.pessoa, rhcontratos.contrato,
                       rhusuarios.nomeusuario,
                       rhcentroscusto2.descricao40 centrocusto,
-                      rhcontratos.datarescisao
+                      rhcontratos.datarescisao,
+                      rhpessoas.cpf
                  FROM rhcontratos, rhpessoas, rhusuarios, rhcentroscusto2
                 WHERE rhcontratos.situacao          in (1,2)
                   AND rhcontratos.pessoa            = rhpessoas.pessoa
@@ -99,11 +101,12 @@ function selectNamesFiredDay() {
     return executeDatabase('metadados', sql)
 }
 
-function selectNamesMetadadosActives(){
-    let sql = `SELECT rhcontratos.contrato, rhpessoas.nome, rhpessoas.cpf  
+function selectNamesMetadadosDisabled(){
+    let sql = `SELECT rhcontratos.contrato, rhpessoas.nome, rhpessoas.cpf, rhpessoas.contratosativos  
                  FROM rhcontratos, rhpessoas
                 WHERE rhcontratos.pessoa   = rhpessoas.pessoa
-                  AND rhcontratos.situacao in (1,2)`
+                  AND rhcontratos.situacao not in (1,2)
+                  AND rhpessoas.pessoa not in (1027, 1777, 1826)`
     return executeDatabase('metadados', sql)
 }
 
@@ -113,6 +116,23 @@ function selectNamesIniflexActives(){
                 WHERE tipo_usuario = 4
                   AND situacao     = 'A'`
     return executeDatabase('iniflex', sql)
+}
+
+function selectNamesIniflex(cpf){
+    let sql = `SELECT asdusuario.cpf, asdusuario.nome
+                 FROM asdusuario
+                WHERE asdusuario.cpf =:cpf`
+    const binds = {cpf};
+    return executeDatabase('iniflex', sql, binds)
+}
+
+function changeStatusUserIniflex(cpf, status){
+    let commit = true;
+    let sql = `UPDATE asdusuario
+                  SET asdusuario.situacao = :status
+                WHERE asdusuario.cpf = :cpf`;
+    const binds = {status, cpf };
+    return executeDatabase('iniflex', sql, binds, commit)
 }
 
 const { spawn } = require('child_process');
@@ -363,24 +383,21 @@ async function sendNamesBirthday() {
     sendMail('🎂️ Lista de aniversários 👻" <nfe@bazei.com.br>', "andrez.paz@bazei.com.br, artes02@bazei.com.br, artes01@bazei.com.br, artes03@bazei.com.br", 'Aniversariantes do Mês - '+returnDateNow(monthNext), 'Em anexo', nameFile, `./${nameFile}`)
 }
 
-async function checkNamesActivesDatabases() {
+async function disableUsersIniflexAll() { //aqui coloca os usuarios desativaos para limpar
     let namesInilfex = await selectNamesIniflexActives();
-    let namesMetadados = await selectNamesMetadadosActives();
-    let namesToDisable = namesInilfex.reduce((total, iniflex) => {
-        let personMatch = namesMetadados.find(metadados => metadados.CONTRATO === iniflex.CPF);
-        if (!personMatch) {
-            total.push(iniflex)
-            //console.log(`Usuario para desabilitar no Iniflex: ${iniflex.CPF} - ${iniflex.NOME}`);
+    let namesMetadadosDisabled = await selectNamesMetadadosDisabled();
+    for (const iniflex of namesInilfex) {
+        let personMatch = namesMetadadosDisabled.find(
+            metadados => metadados.CONTRATO === iniflex.CPF && metadados.CONTRATOSATIVOS == 0) ?? 
+          namesMetadadosDisabled.find(
+            metadados => metadados.CPF === iniflex.CPF && metadados.CONTRATOSATIVOS == 0);
+
+        if (personMatch) {
+            console.log(`Usuario para desabilitar no Iniflex: ${iniflex.CPF} - ${iniflex.NOME}`);
+            await changeStatusUserIniflex(iniflex.CPF, 'D');
+
         }
-        return total
-    },[])
-    //console.log(namesToDisable);
-    
-    namesToDisable.forEach((person)=>{
-        console.log(person)
-    })
-    //console.log(namesInilfex);
-    //console.log(namesMetadados);
+    }
 }
 
 function testeExec() {
@@ -446,5 +463,24 @@ function sendMailTest(mailFrom, emailsDestination, subject, bodyEmail) {
     sendMail(mailFrom, emailsDestination, subject, bodyEmail);
 }
 
+async function disableUsersIniflexDay() {
+    let namesPeople = await selectNamesFiredDay();
+    if (namesPeople.length > 0) {
+        for (const pessoas of namesPeople) {
+            let userIniflexContrato = await selectNamesIniflex(pessoas.CONTRATO)
+            let userIniflexCPF = await selectNamesIniflex(pessoas.CPF)
+            if (userIniflexContrato.length > 0) {
+                console.log(`Desabilitando no Iniflex o usuário ${userIniflexContrato[0].CPF} - ${userIniflexContrato[0].NOME}`)
+                await changeStatusUserIniflex(userIniflexContrato[0].CPF, 'D');
+            }
+            if (userIniflexCPF.length > 0) {
+                console.log(`Desabilitando no Iniflex o usuário ${userIniflexContrato[0].CPF} - ${userIniflexContrato[0].NOME}`)
+                await changeStatusUserIniflex(userIniflexContrato[0].CPF, 'D');
+            }
+        }
+    }
+}
+
 module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher, 
-                  CreateFileNamesHiredDay, CreateFileNamesFiredDay, executeCreateRevokeVoucherGuests, checkNamesActivesDatabases, sendMailTest};
+                  CreateFileNamesHiredDay, CreateFileNamesFiredDay, executeCreateRevokeVoucherGuests, 
+                  disableUsersIniflexAll, sendMailTest, disableUsersIniflexDay};
