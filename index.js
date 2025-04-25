@@ -470,11 +470,11 @@ async function disableUsersIniflexDay() {
             let userIniflexContrato = await selectNamesIniflex(pessoas.CONTRATO)
             let userIniflexCPF = await selectNamesIniflex(pessoas.CPF)
             if (userIniflexContrato.length > 0) {
-                console.log(`Desabilitando no Iniflex o usuário ${userIniflexContrato[0].CPF} - ${userIniflexContrato[0].NOME}`)
+                console.log(`${returnDateNow()} - Desabilitando no Iniflex o usuário ${userIniflexContrato[0].CPF} - ${userIniflexContrato[0].NOME}`)
                 await changeStatusUserIniflex(userIniflexContrato[0].CPF, 'D');
             }
             if (userIniflexCPF.length > 0) {
-                console.log(`Desabilitando no Iniflex o usuário ${userIniflexContrato[0].CPF} - ${userIniflexContrato[0].NOME}`)
+                console.log(`${returnDateNow()} - Desabilitando no Iniflex o usuário ${userIniflexContrato[0].CPF} - ${userIniflexContrato[0].NOME}`)
                 await changeStatusUserIniflex(userIniflexContrato[0].CPF, 'D');
             }
         }
