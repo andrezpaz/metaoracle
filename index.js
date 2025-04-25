@@ -106,7 +106,7 @@ function selectNamesMetadadosDisabled(){
                  FROM rhcontratos, rhpessoas
                 WHERE rhcontratos.pessoa   = rhpessoas.pessoa
                   AND rhcontratos.situacao not in (1,2)
-                  AND rhpessoas.pessoa not in (1027, 1777, 1826)`
+                  AND rhpessoas.pessoa not in (1027, 1777, 1826, 1297)`
     return executeDatabase('metadados', sql)
 }
 
