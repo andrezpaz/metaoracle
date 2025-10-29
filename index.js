@@ -286,8 +286,6 @@ async function disableUsersIniflexAll() { //aqui coloca os usuarios desativaos p
 
 async function testeExec() {
     console.log("Teste de execucao");
-    let namesPeople = await selectNamesFiredDay();
-    console.log(namesPeople);
 }
 
 function createFileCSV(data) {
