@@ -2,13 +2,13 @@ const { appendFile, writeFileSync } = require('fs');
 const oracledb = require('oracledb');
 const parse = require('csv-parse');
 
-const express = require('express');
-const app = express();
+//const express = require('express');
+//const app = express();
 //const port = 3030;
 
 //const dataRoutes = require('./routes/data');
 
-app.use(express.json());
+//app.use(express.json());
 //app.use('/api', dataRoutes);
 
 //app.listen(port, ()=>{
