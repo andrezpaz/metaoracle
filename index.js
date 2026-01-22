@@ -323,9 +323,9 @@ async function CreateFileNamesHiredDay() {
     if (namesPeople.length > 0) {
         // Escrever no arquivo
         fs.writeFileSync(pathfile+'/contratadosSemanaMetadados.csv', createFileCSV(namesPeople));
-        console.log('Arquivo CSV foi gravado com sucesso');
+        console.log(` ${returnDateNow()} - Arquivo CSV foi gravado com sucesso`);
     } else {
-        console.log('Sem dados para gerar o arquivo CSV dos contratados')
+        console.log(` ${returnDateNow()} - Sem dados para gerar o arquivo CSV dos contratados`)
     }
 }
 
@@ -337,9 +337,9 @@ async function CreateFileNamesFiredDay() {
     if (namesPeople.length > 0) {
         // Escrever no arquivo
         fs.writeFileSync(pathfile+'/desligadosSemanaMetadados.csv', createFileCSV(namesPeople));
-        console.log('Arquivo CSV foi gravado com sucesso');
+        console.log(`${returnDateNow()} - Arquivo CSV foi gravado com sucesso`);
     } else {
-        console.log('Sem dados para gerar o arquivo CSV dos contratados')
+        console.log(` ${returnDateNow()} - Sem dados para gerar o arquivo CSV dos contratados`)
     }
 }
 
@@ -351,15 +351,16 @@ async function disableUsersIniflexDay() {
     let namesPeople = await selectNamesFiredDay();
     if (namesPeople.length > 0) {
         for (const pessoas of namesPeople) {
-            let userIniflexContrato = await selectNamesIniflex(pessoas.CONTRATO)
+            let userIniflexContrato = await selectNamesIniflex(pessoas.PESSOA)
             let userIniflexCPF = await selectNamesIniflex(pessoas.CPF)
+            console.log(userIniflexCPF)
             if (userIniflexContrato.length > 0) {
                 console.log(`${returnDateNow()} - Desabilitando no Iniflex o usuário ${userIniflexContrato[0].CPF} - ${userIniflexContrato[0].NOME}`)
                 await changeStatusUserIniflex(userIniflexContrato[0].CPF, 'D');
             }
             if (userIniflexCPF.length > 0) {
-                console.log(`${returnDateNow()} - Desabilitando no Iniflex o usuário ${userIniflexContrato[0].CPF} - ${userIniflexContrato[0].NOME}`)
-                await changeStatusUserIniflex(userIniflexContrato[0].CPF, 'D');
+                console.log(`${returnDateNow()} - Desabilitando no Iniflex o usuário ${userIniflexCPF[0].CPF} - ${userIniflexCPF[0].NOME}`)
+                await changeStatusUserIniflex(userIniflexCPF[0].CPF, 'D');
             }
         }
     }
