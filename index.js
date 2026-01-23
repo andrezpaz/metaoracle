@@ -15,7 +15,7 @@ const parse = require('csv-parse');
 //    console.log(`Servidor Rodando na porta ${port}`);
 //})
 
-const {selectBrithdayNamesMetadados, selectNamesHiredDay, selectNamesFiredDay,
+const {selectBrithdayNamesMetadados, selectNamesHiredDay, selectNamesFiredWeek,
        selectNamesMetadados, selectNamesMetadadosDisabled, selectNamesIniflexActives,
        selectNamesIniflex, changeStatusUserIniflex } = require('./db/query');
 
@@ -101,7 +101,7 @@ async function executeCreateRevokeVoucherGuests() {
 
 async function executeCreateRevokeVoucher() {
     let dateNow = new Date()
-    console.log(dateNow.toString())
+    console.log(`${returnDateNow()}`)
     let vouchersCreated = await runApiUnifi('state_voucher.php');
     let guestsConnected = await listGuests();
     let peopleToCheck = await selectNamesMetadados();
@@ -120,6 +120,7 @@ async function listGuests() {
 }
 
 function createVoucherGuest(notes, duration, quota) {
+    console.log(`${returnDateNow()}`)
     console.log("Vouchers que serao Criados : ");
     console.log(`Notes: ${notes} duration: ${duration} and quota: ${quota}`);
     runApiUnifi('create_voucher.php', notes, duration, quota);
@@ -136,6 +137,7 @@ function createVoucher(peopleToCheck, vouchersCreated) {
         return acumula
     },[]);
     
+    console.log(`${returnDateNow()}`)
     console.log("Vouchers que serao Criados : ")
     //voucherToCreate.length = 2
     voucherToCreate.forEach(voucher => {
@@ -153,6 +155,7 @@ function revokeVoucher(peopleToCheck, vouchersCreated) {
             return voucher
         }
     })
+    console.log(`${returnDateNow()}`)
     console.log("Vouchers que serao revogados: ")
     voucherToRevoke.forEach(voucher =>{
         console.log(voucher.note)
@@ -199,9 +202,9 @@ function sendMail(from, to, subject, msgBody, filename, path) {
 
     transporter.sendMail(mailOptions, function(error, info) {
         if (error) {
-            console.log(error);
+            console.log(`${returnDateNow()} - ${error}`);
         } else {
-            console.log('Email send: ' + info.response)
+            console.log(`${returnDateNow()} - Email send: ` + info.response)
         }
     })
 }
@@ -271,15 +274,14 @@ async function disableUsersIniflexAll() { //aqui coloca os usuarios desativaos p
     let namesInilfex = await selectNamesIniflexActives();
     let namesMetadadosDisabled = await selectNamesMetadadosDisabled();
     for (const iniflex of namesInilfex) {
-        let personMatch = namesMetadadosDisabled.find(
-            metadados => metadados.CONTRATO === iniflex.CPF && metadados.CONTRATOSATIVOS == 0) ?? 
-          namesMetadadosDisabled.find(
-            metadados => metadados.CPF === iniflex.CPF && metadados.CONTRATOSATIVOS == 0);
+        let dataRescisao
+        let personMatch = namesMetadadosDisabled.find(metadados => metadados.PESSOA === iniflex.CPF && metadados.CONTRATOSATIVOS == 0) 
+            ?? 
+            namesMetadadosDisabled.find(metadados => metadados.CPF === iniflex.CPF && metadados.CONTRATOSATIVOS == 0);
 
         if (personMatch) {
-            console.log(`Usuario para desabilitar no Iniflex: ${iniflex.CPF} - ${iniflex.NOME}`);
+            console.log(`Desabilitando no Iniflex o usuário: ${iniflex.CPF} - ${iniflex.NOME} - Rescisão: ${personMatch.DATARESCISAO.toLocaleString('pt-BR')}`);
             await changeStatusUserIniflex(iniflex.CPF, 'D');
-
         }
     }
 }
@@ -330,7 +332,7 @@ async function CreateFileNamesHiredDay() {
 }
 
 async function CreateFileNamesFiredDay() {
-    let namesPeople = await selectNamesFiredDay();
+    let namesPeople = await selectNamesFiredWeek();
     require('dotenv').config();
     let pathfile = process.env.PATH_FILE_AD_META_SYNC
 
@@ -347,19 +349,18 @@ function sendMailTest(mailFrom, emailsDestination, subject, bodyEmail) {
     sendMail(mailFrom, emailsDestination, subject, bodyEmail);
 }
 
-async function disableUsersIniflexDay() {
-    let namesPeople = await selectNamesFiredDay();
+async function disableUsersIniflexWeek() {
+    let namesPeople = await selectNamesFiredWeek();
     if (namesPeople.length > 0) {
         for (const pessoas of namesPeople) {
             let userIniflexContrato = await selectNamesIniflex(pessoas.PESSOA)
             let userIniflexCPF = await selectNamesIniflex(pessoas.CPF)
-            console.log(userIniflexCPF)
             if (userIniflexContrato.length > 0) {
-                console.log(`${returnDateNow()} - Desabilitando no Iniflex o usuário ${userIniflexContrato[0].CPF} - ${userIniflexContrato[0].NOME}`)
+                console.log(`${returnDateNow()} - Desabilitando no Iniflex o usuário ${userIniflexContrato[0].CPF} - ${userIniflexContrato[0].NOME} - Rescisão: ${pessoas.DATARESCISAO.toLocaleString('pt-BR')}`)
                 await changeStatusUserIniflex(userIniflexContrato[0].CPF, 'D');
             }
             if (userIniflexCPF.length > 0) {
-                console.log(`${returnDateNow()} - Desabilitando no Iniflex o usuário ${userIniflexCPF[0].CPF} - ${userIniflexCPF[0].NOME}`)
+                console.log(`${returnDateNow()} - Desabilitando no Iniflex o usuário ${userIniflexCPF[0].CPF} - ${userIniflexCPF[0].NOME} - Rescisão: ${pessoas.DATARESCISAO.toLocaleString('pt-BR')}`)
                 await changeStatusUserIniflex(userIniflexCPF[0].CPF, 'D');
             }
         }
@@ -368,4 +369,4 @@ async function disableUsersIniflexDay() {
 
 module.exports = {testeExec, sendNamesBirthday, sendVouchersToEmail, executeCreateRevokeVoucher, 
                   CreateFileNamesHiredDay, CreateFileNamesFiredDay, executeCreateRevokeVoucherGuests, 
-                  disableUsersIniflexAll, sendMailTest, disableUsersIniflexDay};
+                  disableUsersIniflexAll, sendMailTest, disableUsersIniflexWeek};

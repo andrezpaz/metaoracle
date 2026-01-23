@@ -82,7 +82,7 @@ function selectNamesHiredDay() {
     return executeDatabase('metadados', sql)
 }
 
-function selectNamesFiredDay() {
+function selectNamesFiredWeek() {
     let sql = `SELECT rhpessoas.nome, rhpessoas.pessoa, rhcontratos.contrato,
                       rhusuarios.nomeusuario,
                       rhcentroscusto2.descricao40 centrocusto,
@@ -93,16 +93,17 @@ function selectNamesFiredDay() {
                   AND rhpessoas.empresa             = rhusuarios.empresa
                   AND rhpessoas.pessoa              = rhusuarios.pessoa
                   AND rhcentroscusto2.centrocusto2  = rhcontratos.centrocusto2
-                  AND to_date(rhcontratos.datarescisao, 'dd/mm/yy') = to_date(sysdate, 'dd/mm/yy')`
+                  AND to_date(rhcontratos.datarescisao, 'dd/mm/yy') between to_date(sysdate-7, 'dd/mm/yy') and to_date(sysdate, 'dd/mm/yy')`
     return executeDatabase('metadados', sql)
 }
 
 function selectNamesMetadadosDisabled(){
-    let sql = `SELECT rhcontratos.contrato, rhpessoas.nome, rhpessoas.cpf, rhpessoas.contratosativos  
+    let sql = `SELECT rhpessoas.nome, rhpessoas.pessoa, rhpessoas.cpf, rhcontratos.datarescisao, SUM(rhpessoas.contratosativos) contratosativos
                  FROM rhcontratos, rhpessoas
                 WHERE rhcontratos.pessoa   = rhpessoas.pessoa
                   AND rhcontratos.situacao not in (1,2)
-                  AND rhpessoas.pessoa not in (1027, 1777, 1826, 1297)`
+                  AND rhpessoas.pessoa not in (1027, 1777, 1826, 1297)
+             GROUP BY rhpessoas.nome, rhpessoas.pessoa, rhpessoas.cpf, rhcontratos.datarescisao`
     return executeDatabase('metadados', sql)
 }
 
@@ -131,6 +132,6 @@ function changeStatusUserIniflex(cpf, status){
     return executeDatabase('iniflex', sql, binds, commit)
 }
 
-module.exports = {selectBrithdayNamesMetadados, selectNamesHiredDay, selectNamesFiredDay, 
+module.exports = {selectBrithdayNamesMetadados, selectNamesHiredDay, selectNamesFiredWeek, 
                   selectNamesMetadados, selectNamesMetadadosDisabled, selectNamesIniflexActives,
                   selectNamesIniflex, changeStatusUserIniflex};
